@@ -1,0 +1,10 @@
+smileys-emotion
+people-body
+component
+animals-nature
+food-drink
+travel-places
+activities
+objects
+symbols
+flags
