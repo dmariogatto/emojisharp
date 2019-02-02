@@ -1,7 +1,5 @@
 ﻿using EmojiSharp.Table;
 using HtmlAgilityPack;
-using Microsoft.Extensions.Configuration;
-using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -16,8 +14,6 @@ namespace EmojiSharp
 {
     class Program
     {
-        private static string IdFormat = "0000000000";
-
         static void Main(string[] args)
         {
             Console.WriteLine("Welcome Emoji Hunter");
@@ -176,13 +172,13 @@ namespace EmojiSharp
             foreach (var g in emojisToLoad.Groups)
             {
                 var batchOp = new TableBatchOperation();
-                var groupId = emojisToLoad.Groups.IndexOf(g).ToString(IdFormat);
+                var groupId = emojisToLoad.Groups.IndexOf(g).ToString(EmojiMetadata.IdFormat);
 
                 foreach (var sg in g.SubGroups)
                 {
                     foreach (var e in sg.Emojis)
                     {
-                        var entity = new EmojiEntity(groupId, e.Id.ToString(IdFormat))
+                        var entity = new EmojiEntity(groupId, e.Id.ToString(EmojiMetadata.IdFormat))
                         {
                             Group = g.Name,
                             SubGroup = sg.Name,

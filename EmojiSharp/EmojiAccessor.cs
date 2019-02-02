@@ -9,7 +9,7 @@ namespace EmojiSharp
     public static class EmojiAccessor
     {
         public static readonly Emojis Emojis;
-        public static readonly IDictionary<string, IList<string>> Groups;
+        public static readonly IDictionary<string, IList<string>> GroupsAndSubGroups;
 
         static EmojiAccessor()
         {
@@ -21,10 +21,10 @@ namespace EmojiSharp
             {
                 var result = reader.ReadToEnd();
                 Emojis = JsonConvert.DeserializeObject<Emojis>(result);
-                Groups = new Dictionary<string, IList<string>>();
+                GroupsAndSubGroups = new Dictionary<string, IList<string>>();
 
                 foreach (var g in Emojis.Groups)
-                    Groups.Add(g.Name, g.SubGroups.Select(sg => sg.Name).ToList());
+                    GroupsAndSubGroups.Add(g.Name, g.SubGroups.Select(sg => sg.Name).ToList());
             }
         }
     }
