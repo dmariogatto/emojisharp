@@ -32,7 +32,7 @@ namespace EmojiSharp.Functions
                                              Emojis = sg.Select(e => new {
                                                  Emoji = e.Emoji,
                                                  Cldr = e.Cldr,
-                                                 Codes = e.RowKey.Split('_'),
+                                                 Codes = e.Code.Split('_'),
                                                  Keywords = e.Keywords,
                                              })
                                          })
