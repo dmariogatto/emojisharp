@@ -19,6 +19,9 @@ namespace EmojiSharp
 
         public string Emoji { get; set; }
 
+        [JsonIgnore]
+        public string ImageBase64 { get; set; }
+
         public string Cldr { get; set; }
         public IList<string> Keywords { get; set; }
 

@@ -17,11 +17,29 @@ namespace EmojiSharp
         static void Main(string[] args)
         {
             Console.WriteLine("Welcome Emoji Hunter");
-
-            CreateTableAndPopulate(LoadEmojis()).Wait();
+               
+            var forceDownload = ReadResponse("Force HTML emoji list update? (Y/N) ");
+            
+            CreateTableAndPopulate(LoadEmojis(forceDownload)).Wait();
 
             Console.WriteLine("Complete!");
-            Console.ReadKey();
+        }
+
+        private static bool ReadResponse(string question)
+        {
+            Console.Write(question);
+            
+            bool isValidResponse(string input)
+            {
+                return input?.ToUpperInvariant() == "Y" ||
+                       input?.ToUpperInvariant() == "N";
+            }
+
+            var response = default(string);
+            while (!isValidResponse(response = Console.ReadLine()?.FirstOrDefault().ToString()))
+                Console.Write(question);
+
+            return response.ToUpperInvariant() == "Y";
         }
 
         static Emojis LoadEmojis(bool forceDownload = false)
@@ -86,8 +104,10 @@ namespace EmojiSharp
                     {
                         var id = int.Parse(emojiRow[0].InnerText);
                         var codes = emojiRow[1].InnerText.Split(" ").Select(c => c.Remove(0, 2));
-                        var emoji = emojiRow[2].SelectSingleNode("a/img")
-                                               .GetAttributeValue("alt", string.Empty);
+                        var imgNode = emojiRow[2].SelectSingleNode("a/img");
+                        var emoji = imgNode.GetAttributeValue("alt", string.Empty);
+                        var imageBase64 = imgNode.GetAttributeValue("src", string.Empty)
+                                                 .Replace("data:image/png;base64,", string.Empty);
                         var cldr = HtmlEntity.DeEntitize(emojiRow[3].InnerText).TrimStart("⊛ ".ToArray());
                         var keywords = emojiRow[4].InnerText
                             .Split(" | ")
@@ -99,6 +119,7 @@ namespace EmojiSharp
                             Id = id,
                             Codes = codes.ToList(),
                             Emoji = emoji,
+                            ImageBase64 = imageBase64,
                             Cldr = cldr,
                             Keywords = keywords.ToList(),
                             IsNew = isNew
@@ -133,6 +154,17 @@ namespace EmojiSharp
                 Path.Combine(baseDirectory, "emoji.palette.txt"),
                 moji);
 
+            var emojiLookup = (from g in emojiList.Groups
+                               from sg in g.SubGroups
+                               from e in sg.Emojis
+                               let groupId = emojiList.Groups.IndexOf(g)
+                               let emojiId = e.Id
+                               select new { Emoji = e.Emoji, GroupId = groupId, EmojiId = emojiId });
+
+            File.WriteAllLines(
+                Path.Combine(baseDirectory, "emojiLookup.txt"),
+                emojiLookup.Select(i => $"{{@\"{i.Emoji}\",({i.GroupId}, {i.EmojiId})}},"));
+
             var groupsAndIdRange = (from g in emojiList.Groups
                                     let ids = g.SubGroups.SelectMany(sg => sg.Emojis.Select(e => e.Id))
                                     let groupName = g.Name.Replace(" & ", "-").ToLower()
@@ -151,27 +183,32 @@ namespace EmojiSharp
             File.WriteAllLines(
                 Path.Combine(baseDirectory, "subGroups.txt"),
                 emojiList.Groups.SelectMany(g => g.SubGroups.Select(sg => sg.Name)));
-
+            
             return emojiList;
         }
 
         async static Task CreateTableAndPopulate(Emojis emojisToLoad)
         {
             var table = EmojiTable.Get();
+            var imgTable = EmojiTable.GetImg();
 
             // Drop and recreate table
             await table.DeleteIfExistsAsync();
             await table.CreateIfNotExistsAsync();
 
+            await imgTable.DeleteIfExistsAsync();
+            await imgTable.CreateIfNotExistsAsync();
+
             //Entities
             var emojis = new List<EmojiEntity>();
             //Create the batch operation
             var batchOps = new List<TableBatchOperation>();
-            var tableResults = new List<TableResult>();
+            var imgBatchOps = new List<TableBatchOperation>();
 
             foreach (var g in emojisToLoad.Groups)
             {
                 var batchOp = new TableBatchOperation();
+                var imgBatchOp = new TableBatchOperation();
                 var groupId = emojisToLoad.Groups.IndexOf(g).ToString(EmojiMetadata.IdFormat);
 
                 foreach (var sg in g.SubGroups)
@@ -191,11 +228,25 @@ namespace EmojiSharp
                         emojis.Add(entity);
                         batchOp.Insert(entity);
 
+                        if (!string.IsNullOrWhiteSpace(e.ImageBase64))
+                        {
+                            var imgEntity = new EmojiImageEntity(groupId, e.Id.ToString(EmojiMetadata.IdFormat))
+                            {
+                                Emoji = e.Emoji,
+                                ImageBase64 = e.ImageBase64
+                            };
+
+                            imgBatchOp.Insert(imgEntity);                   
+                        }
+
                         // Maximum operations in a batch
                         if (batchOp.Count == 100)
                         {
                             batchOps.Add(batchOp);
                             batchOp = new TableBatchOperation();
+
+                            imgBatchOps.Add(imgBatchOp);
+                            imgBatchOp = new TableBatchOperation();
                         }
                     }
                 }
@@ -208,16 +259,31 @@ namespace EmojiSharp
             }
 
             var sw = new System.Diagnostics.Stopwatch();
+            var processedCount = 0;
             foreach (var bo in batchOps)
             {
                 sw.Reset();
                 Console.WriteLine($"Inserting batch for group {bo.First().Entity.PartitionKey}, {bo.Count} entries");                
                 sw.Start();
                 var result = await table.ExecuteBatchAsync(bo);
-                tableResults.AddRange(result);
+                processedCount += bo.Count;
                 sw.Stop();
                 Console.WriteLine($"  Insert complete: {sw.ElapsedMilliseconds}ms");
-                Console.WriteLine($"  Processed: {tableResults.Count} emojis");
+                Console.WriteLine($"  Processed: {processedCount} emojis");
+            }
+
+            processedCount = 0;
+            Console.WriteLine($"###IMAGES###");
+            foreach (var bo in imgBatchOps)
+            {
+                sw.Reset();
+                Console.WriteLine($"Inserting image batch for group {bo.First().Entity.PartitionKey}, {bo.Count} entries");
+                sw.Start();
+                var result = await imgTable.ExecuteBatchAsync(bo);
+                sw.Stop();
+                processedCount += bo.Count;
+                Console.WriteLine($"  Insert complete: {sw.ElapsedMilliseconds}ms");
+                Console.WriteLine($"  Processed: {processedCount} emojis");
             }
         }
     }

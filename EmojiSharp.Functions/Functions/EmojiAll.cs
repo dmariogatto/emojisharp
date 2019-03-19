@@ -12,9 +12,9 @@ using EmojiSharp.Table;
 
 namespace EmojiSharp.Functions
 {
-    public static class GetEmoji
+    public static class GetEmojiAll
     {
-        [FunctionName(nameof(GetEmoji))]
+        [FunctionName(nameof(GetEmojiAll))]
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "emoji")] HttpRequest req,
             ILogger log)

@@ -25,6 +25,15 @@ namespace EmojiSharp.Table
             return tableClient.GetTableReference("Emoji");
         }
 
+        public static CloudTable GetImg()
+        {
+            var storageConnString = Configuration.GetConnectionString("StorageConnectionString") ?? "UseDevelopmentStorage=true;";
+
+            var storageAccount = CloudStorageAccount.Parse(storageConnString);
+            var tableClient = storageAccount.CreateCloudTableClient();
+            return tableClient.GetTableReference("EmojiImage");
+        }
+
         public static async Task<List<EmojiEntity>> GetAllEmojis(string partitionKey = "")
         {
             var emojiTable = EmojiTable.Get();
@@ -67,6 +76,15 @@ namespace EmojiSharp.Table
             var result = await emojiTable.ExecuteAsync(retrieveOperation);
 
             return result.Result as EmojiEntity;
+        }
+
+        public static async Task<EmojiImageEntity> GetEmojiImg(string partitionKey, string rowKey)
+        {
+            var emojiTable = EmojiTable.GetImg();
+            var retrieveOperation = TableOperation.Retrieve<EmojiImageEntity>(partitionKey, rowKey);
+            var result = await emojiTable.ExecuteAsync(retrieveOperation);
+
+            return result.Result as EmojiImageEntity;
         }
     }
 }

@@ -7,9 +7,10 @@
     <Compile Include="..\EmojiSharp.Table\EmojiMetadata.cs" Link="Table\EmojiMetadata.cs" />
     <Compile Include="..\EmojiSharp.Table\EmojiTable.cs" Link="Table\EmojiTable.cs" />
     <Compile Include="..\EmojiSharp.Table\Models\EmojiEntity.cs" Link="Table\Models\EmojiEntity.cs" />
+    <Compile Include="..\EmojiSharp.Table\Models\EmojiImageEntity.cs" Link="Table\Models\EmojiImageEntity.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.25" />
+    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="1.0.26" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
