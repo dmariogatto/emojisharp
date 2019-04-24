@@ -11071,9 +11071,10 @@
                 "1F9CA"
               ],
               "emoji": "🧊",
-              "cldr": "ice cube",
+              "cldr": "ice",
               "keywords": [
                 "cold",
+                "ice",
                 "ice cube",
                 "iceberg"
               ],
@@ -18547,8 +18548,10 @@
               "emoji": "🩸",
               "cldr": "drop of blood",
               "keywords": [
+                "bleed",
                 "blood donation",
                 "drop of blood",
+                "injury",
                 "medicine",
                 "menstruation"
               ],
@@ -24214,7 +24217,7 @@
                 "1F1F0"
               ],
               "emoji": "🇲🇰",
-              "cldr": "flag: Macedonia",
+              "cldr": "flag: North Macedonia",
               "keywords": [
                 "flag"
               ],
@@ -25688,5 +25691,5 @@
       ]
     }
   ],
-  "lastUpdate": "2019-03-17T22:26:23.5496448Z"
+  "lastUpdate": "2019-04-24T10:51:15.3424413Z"
 }
